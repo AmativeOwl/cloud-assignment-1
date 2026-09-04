@@ -1,1 +1,6 @@
+fastapi
+uvicorn
 ultralytics
+httpx
+pydantic
+python-multipart
