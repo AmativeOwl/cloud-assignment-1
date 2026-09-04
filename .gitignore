@@ -36,6 +36,7 @@ coco128.zip
 *.png
 !docs/**/*.png
 !docs/**/*.jpg
+!carpark_sim/sample_images/*.jpg
 *.log
 inference.log
 counter.txt
