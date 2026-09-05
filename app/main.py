@@ -13,6 +13,9 @@ from app import inference
 from app import carpark_client
 from app import carpark_cache
 from app import request_tracker
+from app import response_cache
+from app import dashboard
+from fastapi.responses import Response
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 logger = logging.getLogger("smartpark.main")
@@ -25,12 +28,20 @@ def health():
     return {"status": "healthy"}
 
 
+from app import response_cache
+
 @app.get("/api/find-carparks", response_model=FindCarparksResponse)
 async def find_carparks(
     uuid: str = Query(..., description="Unique identifier for the requesting client"),
     n: int = Query(3, ge=1, description="Number of top car parks to return"),
 ):
     request_tracker.record_request(uuid)
+
+    cached = response_cache.get_cached(uuid, n)
+    if cached is not None:
+        logger.info(f"[{uuid}] find-carparks: served from cache (n={n})")
+        return cached
+
     start_time = time.time()
 
     max_n = len(carpark_client.get_all_carpark_ids())
@@ -72,16 +83,18 @@ async def find_carparks(
     elapsed_ms = round((time.time() - start_time) * 1000, 2)
 
     if not top_results:
-        return FindCarparksResponse(
+        response = FindCarparksResponse(
             uuid=uuid, status="error", msg="No car park data could be retrieved.",
             speed_inference=f"{elapsed_ms} ms", requested_n=n, results=[],
         )
+    else:
+        response = FindCarparksResponse(
+            uuid=uuid, status="success", msg="success",
+            speed_inference=f"{elapsed_ms} ms", requested_n=n, results=top_results,
+        )
 
-    return FindCarparksResponse(
-        uuid=uuid, status="success", msg="success",
-        speed_inference=f"{elapsed_ms} ms", requested_n=n, results=top_results,
-    )
-
+    response_cache.set_cached(uuid, n, response)
+    return response
 
 @app.get("/api/annotate-carpark", response_model=AnnotateCarparkResponse)
 async def annotate_carpark(carpark_id: str = Query(..., description="Car park ID to annotate")):
@@ -156,3 +169,12 @@ def ops_recent_activity():
         "recent_request_count": request_tracker.count_recent_requests(),
         "recent_unique_users": request_tracker.count_recent_unique_users(),
     }
+
+@app.get("/api/ops/dashboard")
+def ops_dashboard():
+    """
+    OPS-REQ-2: On-demand operational dashboard showing current car park
+    availability and recent platform activity, rendered as a PNG image.
+    """
+    png_bytes = dashboard.generate_dashboard_png()
+    return Response(content=png_bytes, media_type="image/png")

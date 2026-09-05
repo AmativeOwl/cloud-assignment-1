@@ -4,3 +4,4 @@ ultralytics
 httpx
 pydantic
 python-multipart
+matplotlib
