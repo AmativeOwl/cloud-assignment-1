@@ -6,6 +6,8 @@ import logging
 from PIL import Image
 from ultralytics import YOLO
 
+from app.model_loader import ensure_model_downloaded
+
 logger = logging.getLogger("smartpark.inference")
 
 # Path where the startup script (start.sh) downloads the model from GCS
@@ -20,6 +22,7 @@ AVAILABLE_CLASS_NAMES = {
 }
 
 logger.info(f"Loading YOLO model from {MODEL_PATH}")
+ensure_model_downloaded()
 model = YOLO(MODEL_PATH)
 logger.info(f"Model loaded. Classes: {model.names}")
 
