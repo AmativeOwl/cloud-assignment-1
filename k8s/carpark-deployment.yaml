@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: carpark-sim
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: carpark-sim
+  template:
+    metadata:
+      labels:
+        app: carpark-sim
+    spec:
+      containers:
+        - name: carpark-sim
+          image: australia-southeast2-docker.pkg.dev/assignment-1-507610/smartpark-repo/smartpark-sim:v1
+          ports:
+            - containerPort: 9000
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

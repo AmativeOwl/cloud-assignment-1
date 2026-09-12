@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartpark-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartpark-app
+  template:
+    metadata:
+      labels:
+        app: smartpark-app
+    spec:
+      containers:
+        - name: smartpark-app
+          image: australia-southeast2-docker.pkg.dev/assignment-1-507610/smartpark-repo/smartpark-app:v1
+          ports:
+            - containerPort: 8080
+          env:
+            - name: GCS_BUCKET
+              value: "smartpark-model"
+            - name: GCS_MODEL_BLOB
+              value: "model.pt"
+            - name: CARPARK_SIM_URL
+              value: "http://carpark-sim-service:9000"
+            - name: NUM_CARPARKS
+              value: "20"
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "1.5Gi"
+            limits:
+              cpu: "1500m"
+              memory: "2.5Gi"
